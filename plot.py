@@ -17,7 +17,7 @@ class TracesGroup(object):
 
 def plot(*args):
     cols = 2
-    rows = len(args) // cols + 1
+    rows = len(args) // cols + (1 if len(args) % cols != 0 else 0)
     fig = tools.make_subplots(cols=cols, rows=rows, subplot_titles=[group.name for group in args])
     i = 0
 
@@ -57,22 +57,32 @@ class SendTreadStatAnalyzer(object):
 class UTP2AckStatAnalyzer(object):
     def __init__(self):
         # selack - ack=1257116127, processed=1, last_pr=1257116127, loss=0.00/0, rtt=231/11940us, pdelay=11us, buf=0/6468619 B, in_flight=0, seq=1257116128
-        self.re = re.compile(r'^.*processed=([0-9]+),.*loss=[0-9\.]+\/([0-9]+), rtt=([0-9]+)\/([0-9]+)us, pdelay=([0-9]+)us, buf=([0-9]+)\/([0-9]+) B, in_flight=([0-9]+).*$')
+        self.re = re.compile(r'^.*\[UTP2\]: ([0-9a-zx]+).*processed=([0-9]+),.*loss=[0-9\.]+\/([0-9]+), rtt=([0-9]+)\/([0-9]+)us, pdelay=([0-9]+)us, buf=([0-9]+)\/([0-9]+) B, in_flight=([0-9]+).*$')
         self.fields = ['processed_packets', 'loss_packets', 'min_rtt', 'avr_rtt', 'packets_delay', 'actual_sndbuf', 'max_sndbuf', 'inflight_packets']
         self.groups = {'utp packets': ['processed_packets', 'loss_packets', 'inflight_packets'], 'rtt': ['min_rtt', 'avr_rtt'], 'delay': ['packets_delay'], 'sndbuf': ['actual_sndbuf', 'max_sndbuf']}
-        self.traces = {key: [] for key in self.fields}
+        self.traces = {}
 
     def process_line(self, line):
         m = self.re.match(line)
-        i = 1
+
         if m:
+            sock_addr = m.group(1)
+            if sock_addr not in self.traces:
+                self.traces[sock_addr] = {key: [] for key in self.fields}
+
+            i = 2
             for field in self.fields:
-                self.traces[field].append(float(m.group(i)))
+                self.traces[sock_addr][field].append(float(m.group(i)))
                 i += 1
         return m
 
     def get_traces(self):
-        return [TracesGroup('utp2 ' + name, [(field, self.traces[field]) for field in fields]) for name, fields in self.groups.items()]
+        result = []
+        for sock_addr, sock_traces in self.traces.items():
+            for group_name, fields in self.groups.items():
+                result.append(TracesGroup('utp2 %s %s' % (sock_addr, group_name), [(field, sock_traces[field]) for field in fields]))
+
+        return result
 
 
 class PeerConnectionStatAnalyzer(object):
