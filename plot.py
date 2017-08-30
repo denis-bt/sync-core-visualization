@@ -57,7 +57,7 @@ class SendTreadStatAnalyzer(object):
 class UTP2AckStatAnalyzer(object):
     def __init__(self):
         # selack - ack=1257116127, processed=1, last_pr=1257116127, loss=0.00/0, rtt=231/11940us, pdelay=11us, buf=0/6468619 B, in_flight=0, seq=1257116128
-        self.re = re.compile(r'^.*([0-9a-zx]+)?.*processed=([0-9]+),.*loss=[0-9\.]+\/([0-9]+), rtt=([0-9]+)\/([0-9]+)us, pdelay=([0-9]+)us, buf=([0-9]+)\/([0-9]+) B, in_flight=([0-9]+).*$')
+        self.re = re.compile(r'^.*([0-9a-zx]+)?.*acked=([0-9]+),.*loss=[0-9\.]+\%\/([0-9]+), rtt=([0-9]+)\/([0-9]+)us, pdelay=([0-9]+)us, buf=([0-9]+)\/([0-9]+) B, in_flight=([0-9]+).*$')
 
         self.fields = ['processed_packets', 'loss_packets', 'min_rtt', 'avr_rtt', 'packets_delay', 'actual_sndbuf', 'max_sndbuf', 'inflight_packets']
         self.groups = {'utp packets': ['processed_packets', 'loss_packets', 'inflight_packets'], 'rtt': ['min_rtt', 'avr_rtt'], 'delay': ['packets_delay'], 'sndbuf': ['actual_sndbuf', 'max_sndbuf']}
