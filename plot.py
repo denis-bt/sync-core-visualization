@@ -37,8 +37,8 @@ def plot(*args):
 
 class SendTreadStatAnalyzer(object):
     def __init__(self):
-        self.re = re.compile(r'^.*queue_size=([0-9]+), dropped=([0-9]+), sent=([0-9]+).*$')
-        self.fields = ['queue_size', 'dropped', 'sent']
+        self.re = re.compile(r'^.*loop_time=([0-9]+)us, wait_time=([0-9]+)us, process_queue_time=([0-9]+)us, process_packets_time=([0-9]+)us, check_timeout_time=([0-9]+)us.*$')
+        self.fields = ['loop_time', 'wait_time', 'process_queue_time', 'process_packets_time', 'check_timeout_time']
         self.traces = {key: [] for key in self.fields}
 
     def process_line(self, line):
@@ -51,7 +51,7 @@ class SendTreadStatAnalyzer(object):
         return m
 
     def get_traces(self):
-        return [TracesGroup('udp SendThread', [(field, self.traces[field]) for field in self.fields])]
+        return [TracesGroup('udp EventsThread timing', [(field, self.traces[field]) for field in self.fields])]
 
 
 class UTP2AckStatAnalyzer(object):
